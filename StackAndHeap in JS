@@ -1,0 +1,720 @@
+------------------------------------------------------------------
+| Stack                           | Heap                         |
+| ------------------------------- | ---------------------------- |
+| Fast                            | Relatively slower            |
+| Function execution contexts     | Objects/arrays/functions     |
+| Primitive values (conceptually) | Dynamically allocated data   |
+| LIFO                            | Managed by garbage collector |
+| Smaller                         | Usually much larger          |
+------------------------------------------------------------------
+
+
+
+STACK                         HEAP
+
+user1 ───────────────┐
+                     ├──────> { name: "Bob" }
+user2 ───────────────┘
+
+
+
+
+STACK                         HEAP
+┌───────────────┐             ┌──────────────────┐
+│ user ─────────┼────────────>│ {                │
+│               │             │   name: "John"   │
+│ numbers ──────┼────────────>│   age: 25        │
+└───────────────┘             │ }                │
+                              │                  │
+                              │ [10,20,30]       │
+                              └──────────────────┘
+
+
+               # 🧠 Stack & Heap in JavaScript
+
+> **Quick idea:**
+> **Stack = execution + variables/references**
+> **Heap = dynamically allocated objects/data**
+
+---
+
+## 1. 🏗️ Big Picture
+
+```text
+                    JAVASCRIPT MEMORY
+                           │
+              ┌────────────┴────────────┐
+              │                         │
+           📚 STACK                  🗄️ HEAP
+              │                         │
+      ┌───────┼────────┐          ┌─────┼─────────┐
+      │       │        │          │     │         │
+   Primitive  Function  Reference  Object Array  Function
+    values     calls     values             │
+      │                            Complex / dynamic data
+      │
+   number
+   string
+   boolean
+   null
+   undefined
+   symbol
+   bigint
+```
+
+> ⚠️ **Important:** This is a simplified mental model. JavaScript does not require engines to physically implement memory exactly this way.
+
+---
+
+# 2. 📚 STACK
+
+The **stack** is used to manage function execution and local execution state.
+
+```text
+                 STACK
+        ┌─────────────────────┐
+        │     function C()    │  ← Last In
+        ├─────────────────────┤
+        │     function B()    │
+        ├─────────────────────┤
+        │     function A()    │
+        ├─────────────────────┤
+        │   Global Context    │  ← First In
+        └─────────────────────┘
+
+             ↑
+             │
+          TOP OF STACK
+
+         LIFO
+   Last In → First Out
+```
+
+### Example
+
+```js
+function first() {
+    second();
+}
+
+function second() {
+    console.log("Hello");
+}
+
+first();
+```
+
+### Call stack
+
+```text
+Step 1:
+
+┌─────────────────────┐
+│  Global Context     │
+└─────────────────────┘
+
+
+Step 2: first()
+
+┌─────────────────────┐
+│     first()         │
+├─────────────────────┤
+│  Global Context     │
+└─────────────────────┘
+
+
+Step 3: second()
+
+┌─────────────────────┐
+│     second()        │ ← TOP
+├─────────────────────┤
+│     first()         │
+├─────────────────────┤
+│  Global Context     │
+└─────────────────────┘
+
+
+second() finishes
+       ↓
+
+┌─────────────────────┐
+│     first()         │ ← TOP
+├─────────────────────┤
+│  Global Context     │
+└─────────────────────┘
+
+
+first() finishes
+       ↓
+
+┌─────────────────────┐
+│  Global Context     │
+└─────────────────────┘
+```
+
+### 🔑 Remember
+
+```text
+Function called
+      ↓
+Execution Context created
+      ↓
+Pushed onto Call Stack
+      ↓
+Function executes
+      ↓
+Function finishes
+      ↓
+Execution Context removed
+```
+
+---
+
+# 3. 🗄️ HEAP
+
+The **heap** is used for dynamically allocated data such as objects and arrays.
+
+```text
+                    HEAP
+        ┌──────────────────────────┐
+        │                          │
+        │   {                      │
+        │      name: "John",       │
+        │      age: 25             │
+        │   }                      │
+        │                          │
+        │   [10, 20, 30]           │
+        │                          │
+        │   function (...) {...}   │
+        │                          │
+        │   Map / Set / Date ...   │
+        │                          │
+        └──────────────────────────┘
+```
+
+Example:
+
+```js
+const user = {
+    name: "John",
+    age: 25
+};
+
+const numbers = [10, 20, 30];
+```
+
+Simplified memory model:
+
+```text
+             STACK                         HEAP
+
+        ┌──────────────┐
+        │ user ────────┼──────────────┐
+        ├──────────────┤              │
+        │ numbers ─────┼─────────┐    │
+        └──────────────┘          │    │
+                                  │    │
+                                  ↓    ↓
+
+                          ┌──────────────────┐
+                          │ {                │
+                          │   name: "John"   │
+                          │   age: 25        │
+                          │ }                │
+                          └──────────────────┘
+
+                          ┌──────────────────┐
+                          │ [10, 20, 30]     │
+                          └──────────────────┘
+```
+
+---
+
+# 4. 🔢 Primitive Values
+
+Primitive values include:
+
+```text
+number
+string
+boolean
+undefined
+null
+symbol
+bigint
+```
+
+Example:
+
+```js
+let age = 25;
+let name = "John";
+let isStudent = true;
+```
+
+Simplified view:
+
+```text
+STACK
+┌────────────────────┐
+│ age = 25           │
+├────────────────────┤
+│ name = "John"      │
+├────────────────────┤
+│ isStudent = true   │
+└────────────────────┘
+```
+
+When you copy a primitive:
+
+```js
+let a = 10;
+let b = a;
+
+b = 20;
+
+console.log(a); // 10
+console.log(b); // 20
+```
+
+Conceptually:
+
+```text
+STACK
+
+┌──────────────┐
+│ a = 10       │
+├──────────────┤
+│ b = 10       │
+└──────────────┘
+
+        ↓
+
+b = 20
+
+┌──────────────┐
+│ a = 10       │
+├──────────────┤
+│ b = 20       │
+└──────────────┘
+
+✅ a is NOT affected
+```
+
+### 🔑 Key point
+
+> **Primitive assignment copies the value.**
+
+---
+
+# 5. 📦 Objects / Reference Values
+
+Example:
+
+```js
+let user1 = {
+    name: "John"
+};
+
+let user2 = user1;
+```
+
+Simplified model:
+
+```text
+              STACK                       HEAP
+
+        ┌──────────────┐
+        │ user1 ───────┼─────────────┐
+        ├──────────────┤             │
+        │ user2 ───────┼─────────┐   │
+        └──────────────┘         │   │
+                                 │   ↓
+                                 │ ┌────────────────┐
+                                 └→│ name: "John"   │
+                                   └────────────────┘
+```
+
+Both variables refer to the **same object**.
+
+Now:
+
+```js
+user2.name = "Bob";
+```
+
+Result:
+
+```text
+              STACK                       HEAP
+
+        ┌──────────────┐
+        │ user1 ───────┼─────────────┐
+        ├──────────────┤             │
+        │ user2 ───────┼─────────┐   │
+        └──────────────┘         │   │
+                                 │   ↓
+                                 │ ┌────────────────┐
+                                 └→│ name: "Bob"    │
+                                   └────────────────┘
+```
+
+Therefore:
+
+```js
+console.log(user1.name); // "Bob"
+console.log(user2.name); // "Bob"
+```
+
+### 🔑 Key point
+
+> **Object assignment copies the reference, not the object itself.**
+
+---
+
+# 6. 🆚 Primitive vs Object
+
+```text
+              PRIMITIVE                         OBJECT
+                 │                                │
+                 ↓                                ↓
+          ┌─────────────┐                 ┌──────────────┐
+          │   value     │                 │   object     │
+          │     10      │                 │ { name: ...} │
+          └─────────────┘                 └──────────────┘
+                 │                                ↑
+                 │                                │
+                 │                        reference
+                 │                                │
+          variable holds                  variable holds
+             the value                     a reference
+```
+
+### Primitive
+
+```js
+let a = 10;
+let b = a;
+
+b = 20;
+```
+
+```text
+a ──→ 10
+b ──→ 20
+
+Different values
+```
+
+### Object
+
+```js
+let a = { x: 10 };
+let b = a;
+
+b.x = 20;
+```
+
+```text
+a ──────────┐
+            ├────→ { x: 20 }
+b ──────────┘
+
+Same object
+```
+
+---
+
+# 7. 🧩 Functions and the Call Stack
+
+Consider:
+
+```js
+function multiply(a, b) {
+    return a * b;
+}
+
+function calculate() {
+    return multiply(5, 10);
+}
+
+calculate();
+```
+
+Call stack:
+
+```text
+                  CALL STACK
+
+        ┌─────────────────────────┐
+        │ multiply(5, 10)         │ ← TOP
+        ├─────────────────────────┤
+        │ calculate()             │
+        ├─────────────────────────┤
+        │ Global Execution Context│
+        └─────────────────────────┘
+```
+
+When `multiply()` finishes:
+
+```text
+        ┌─────────────────────────┐
+        │ calculate()             │ ← TOP
+        ├─────────────────────────┤
+        │ Global Execution Context│
+        └─────────────────────────┘
+```
+
+Then:
+
+```text
+        ┌─────────────────────────┐
+        │ Global Execution Context│
+        └─────────────────────────┘
+```
+
+---
+
+# 8. 💥 Stack Overflow
+
+If functions keep calling themselves without stopping:
+
+```js
+function hello() {
+    hello();
+}
+
+hello();
+```
+
+The stack keeps growing:
+
+```text
+┌─────────────────┐
+│ hello()         │
+├─────────────────┤
+│ hello()         │
+├─────────────────┤
+│ hello()         │
+├─────────────────┤
+│ hello()         │
+├─────────────────┤
+│ hello()         │
+├─────────────────┤
+│ hello()         │
+├─────────────────┤
+│      ...        │
+├─────────────────┤
+│ Global Context  │
+└─────────────────┘
+        ↓
+   💥 STACK OVERFLOW
+```
+
+Because the call stack has a limited amount of memory.
+
+---
+
+# 9. 🗑️ Garbage Collection
+
+JavaScript automatically manages memory using **garbage collection**.
+
+Example:
+
+```js
+let user = {
+    name: "John"
+};
+
+user = null;
+```
+
+Initially:
+
+```text
+STACK                         HEAP
+
+user ─────────────────────→ { name: "John" }
+```
+
+After:
+
+```js
+user = null;
+```
+
+```text
+STACK                         HEAP
+
+user → null                  { name: "John" }
+                                  ↑
+                                  │
+                              no reference
+```
+
+The object is now **unreachable**.
+
+The garbage collector can eventually reclaim that memory.
+
+```text
+Object unreachable
+       ↓
+Eligible for garbage collection
+       ↓
+Garbage Collector
+       ↓
+Memory can be reclaimed
+```
+
+> ⚠️ "Garbage collected immediately" is not guaranteed. The JavaScript engine decides when collection happens.
+
+---
+
+# 10. 🧠 The Most Important Diagram
+
+Memorize this:
+
+```text
+                         JAVASCRIPT
+                             │
+                             ↓
+                    ┌─────────────────┐
+                    │    MEMORY       │
+                    └────────┬────────┘
+                             │
+                ┌────────────┴────────────┐
+                ↓                         ↓
+             STACK                      HEAP
+                │                         │
+        ┌───────┼────────┐        ┌───────┼────────┐
+        ↓       ↓        ↓        ↓       ↓        ↓
+    Primitive  Function Reference Object  Array  Function
+     values     calls    ───────→
+        │                         │
+        │                         │
+        ↓                         ↓
+   ┌──────────┐             ┌─────────────┐
+   │ a = 10   │             │ { x: 10 }   │
+   │ b = "Hi" │             │ [1, 2, 3]   │
+   └──────────┘             └─────────────┘
+                                  ↑
+                                  │
+                            reference from
+                               the stack
+```
+
+---
+
+# 11. ⚡ Quick Comparison
+
+| Feature           | Stack                                                   | Heap                                                        |
+| ----------------- | ------------------------------------------------------- | ----------------------------------------------------------- |
+| Main purpose      | Execution state / call stack                            | Dynamically allocated data                                  |
+| Function calls    | ✅                                                       | Function objects may reside in heap                         |
+| Objects           | Reference held here; object storage is engine-dependent | Commonly stored here                                        |
+| Arrays            | Reference held here                                     | Commonly stored here                                        |
+| Speed             | Very fast access                                        | Generally more flexible, but allocation/access details vary |
+| Memory management | Stack frames are removed as calls return                | Garbage collector manages reachable/unreachable objects     |
+| Structure         | LIFO call stack                                         | No LIFO requirement                                         |
+| Size              | Limited                                                 | Typically much larger                                       |
+| Example           | `let x = 10`                                            | `{ name: "John" }`                                          |
+
+---
+
+# 12. 🎯 Interview Revision
+
+### Q1. What is the Stack?
+
+> The stack is used for managing function execution and execution contexts. It follows **LIFO** order.
+
+### Q2. What is the Heap?
+
+> The heap is a memory area used for dynamically allocated data such as objects and arrays.
+
+### Q3. What happens when we copy a primitive?
+
+```js
+let a = 10;
+let b = a;
+```
+
+> The value is copied. `a` and `b` are independent.
+
+### Q4. What happens when we copy an object?
+
+```js
+let a = { x: 10 };
+let b = a;
+```
+
+> `b` receives a reference to the same object.
+
+### Q5. Why does changing `b` sometimes change `a`?
+
+```js
+let a = { x: 10 };
+let b = a;
+
+b.x = 20;
+
+console.log(a.x); // 20
+```
+
+> Because both variables refer to the same object.
+
+### Q6. What is Stack Overflow?
+
+> It happens when the call stack grows beyond its available capacity, commonly due to uncontrolled recursion.
+
+### Q7. What is Garbage Collection?
+
+> Automatic memory management that allows an engine to reclaim memory occupied by objects that are no longer reachable.
+
+---
+
+# 🚀 30-Second Revision
+
+```text
+                 JS MEMORY
+                    │
+          ┌─────────┴─────────┐
+          ↓                   ↓
+       STACK                HEAP
+          │                   │
+   Execution state       Objects / Arrays
+   Function calls        Complex data
+   References ─────────→ Objects
+          │
+          ↓
+        LIFO
+
+Primitive:
+    Copy value
+       ↓
+    Independent
+
+Object:
+    Copy reference
+       ↓
+    Same object
+
+Function call:
+    Push → Execute → Pop
+
+Unused object:
+    Unreachable
+       ↓
+    Garbage Collector
+       ↓
+    Memory reclaimed
+```
+
+## 🧠 One-Line Memory Trick
+
+> **STACK = "Where execution is happening"**
+> **HEAP = "Where dynamically allocated data lives"**
+> **REFERENCE = "How a variable can point to an object"**
+               
+
+
+
